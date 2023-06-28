@@ -61,7 +61,7 @@ fun Application.configureRouting() {
         }
         get("/acquire-account") {
             acquireAccountMutex.withLock {
-                val isRegularAccount = call.request.queryParameters[IS_REGULAR_ACCOUNT_QUERY_PARAM].toBoolean()
+                val isRegularAccount = call.request.queryParameters[IS_REGULAR_ACCOUNT_QUERY_PARAM]?.toBoolean() ?: true
 
                 try {
                     var index = Random.nextInt(0, accounts.size - ACCOUNTS_TO_KEEP_UNUSED)

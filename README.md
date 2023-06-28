@@ -26,3 +26,30 @@ Then simply invoke the command:
 
 This will give you an `accounts-manager` native application under the `build/native/nativeCompile` path, which you can
 then use as part of `Lightweight Mina Network` Docker image generation procedure.
+
+---
+
+```shell
+-----------------------------
+.:: Mina Accounts-Manager ::.
+-----------------------------
+
+Application initialized and is running at: http://localhost:8181
+Available endpoints:
+
+   HTTP GET:
+   http://localhost:8181/acquire-account
+   Supported Query params: isRegularAccount=<boolean>, default: true
+                           Useful if you need to get non-zkApp account.
+   Returns Account JSON:
+   { pk:"", sk:"" }
+
+   HTTP PUT:
+   http://localhost:8181/release-account
+   Accepts Account JSON as request payload:
+   { pk:"", sk:"" }
+
+Operating with:
+   Mina Genesis ledger:   /root/.mina-network/mina-local-network-2-1-1/daemon.json
+   Mina GraphQL endpoint: http://localhost:8080/graphql
+```
