@@ -1,13 +1,26 @@
 package xyz.p42.utils
 
 import kotlinx.coroutines.delay
-import kotlinx.html.*
-import xyz.p42.*
-import xyz.p42.properties.*
+import kotlinx.html.HTML
+import kotlinx.html.body
+import kotlinx.html.code
+import kotlinx.html.head
+import kotlinx.html.style
+import kotlinx.html.title
+import xyz.p42.accounts
+import xyz.p42.accountsToBeReleased
+import xyz.p42.genesisLedgerPath
+import xyz.p42.graphQlEndpoint
+import xyz.p42.properties.ACCOUNTS_TO_KEEP_UNUSED
+import xyz.p42.properties.ACCOUNT_ACQUIRING_ATTEMPT_TIMEOUT
+import xyz.p42.properties.HTML_CODE_BLOCK_STYLE
+import xyz.p42.properties.IS_REGULAR_ACCOUNT_QUERY_PARAM
+import xyz.p42.properties.SERVICE_TITLE
+import xyz.p42.servicePort
 import kotlin.random.Random
 
 fun getWelcomeMessage() =
-    """
+  """
                 
                 
         -----------------------------
@@ -36,13 +49,13 @@ fun getWelcomeMessage() =
     """.trimIndent()
 
 fun getErrorHtml(cause: String, block: HTML): HTML {
-    block.head {
-        title(SERVICE_TITLE)
-    }
-    block.body {
-        code {
-            style = HTML_CODE_BLOCK_STYLE
-            +"""
+  block.head {
+    title(SERVICE_TITLE)
+  }
+  block.body {
+    code {
+      style = HTML_CODE_BLOCK_STYLE
+      +"""
                 
                 
                 -----------------------------
@@ -52,14 +65,14 @@ fun getErrorHtml(cause: String, block: HTML): HTML {
                 $cause
            
             """.trimIndent()
-        }
     }
+  }
 
-    return block
+  return block
 }
 
 fun getAccountVkGraphQlQuery(publicKey: String) =
-    """
+  """
     {
       account(publicKey: "$publicKey") {
         verificationKey {
@@ -70,12 +83,12 @@ fun getAccountVkGraphQlQuery(publicKey: String) =
     """.trimIndent()
 
 suspend fun releaseAccountAndGetNextIndex(): Int {
-    if (accounts.isNotEmpty()) {
-        val publicKey = accountsToBeReleased.removeLast().pk
-        accounts[accounts.indexOfFirst {
-            it.pk == publicKey
-        }].used = false
-    }
-    delay(ACCOUNT_ACQUIRING_ATTEMPT_TIMEOUT)
-    return Random.nextInt(0, accounts.size - ACCOUNTS_TO_KEEP_UNUSED)
+  if (accounts.isNotEmpty()) {
+    val publicKey = accountsToBeReleased.removeLast().pk
+    accounts[accounts.indexOfFirst {
+      it.pk == publicKey
+    }].used = false
+  }
+  delay(ACCOUNT_ACQUIRING_ATTEMPT_TIMEOUT)
+  return Random.nextInt(0, accounts.size - ACCOUNTS_TO_KEEP_UNUSED)
 }

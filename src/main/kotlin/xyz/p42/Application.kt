@@ -1,7 +1,7 @@
 package xyz.p42
 
-import io.ktor.server.cio.*
-import io.ktor.server.engine.*
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
 import kotlinx.serialization.json.Json
 import xyz.p42.model.Account
 import xyz.p42.model.GenesisLedger
@@ -20,19 +20,19 @@ val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
 @Suppress("ExtractKtorModule")
 fun main(args: Array<String>) {
-    if (args.isNotEmpty()) {
-        LoggingUtils.logger.info(
-            "CLI args passed: ${args.joinToString(";")}"
-        )
-    }
+  if (args.isNotEmpty()) {
+    LoggingUtils.logger.info(
+      "CLI args passed: ${args.joinToString(";")}"
+    )
+  }
 
-    embeddedServer(CIO, port = servicePort) {
-        genesisLedgerPath = args[0].trim()
-        graphQlEndpoint = "http://localhost:${args[1].toInt()}/graphql"
-        accounts = json.decodeFromString<GenesisLedger>(File(genesisLedgerPath).readText()).ledger.accounts
+  embeddedServer(CIO, port = servicePort) {
+    genesisLedgerPath = args[0].trim()
+    graphQlEndpoint = "http://localhost:${args[1].toInt()}/graphql"
+    accounts = json.decodeFromString<GenesisLedger>(File(genesisLedgerPath).readText()).ledger.accounts
 
-        configureRouting()
+    configureRouting()
 
-        LoggingUtils.logger.info(getWelcomeMessage())
-    }.start(wait = true)
+    LoggingUtils.logger.info(getWelcomeMessage())
+  }.start(wait = true)
 }
