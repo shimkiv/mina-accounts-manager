@@ -7,6 +7,7 @@ import kotlinx.html.code
 import kotlinx.html.head
 import kotlinx.html.style
 import kotlinx.html.title
+import xyz.p42.accountCommonPassword
 import xyz.p42.accounts
 import xyz.p42.accountsToBeReleased
 import xyz.p42.genesisLedgerPath
@@ -16,8 +17,10 @@ import xyz.p42.properties.ACCOUNT_ACQUIRING_ATTEMPT_TIMEOUT
 import xyz.p42.properties.HTML_CODE_BLOCK_STYLE
 import xyz.p42.properties.IS_REGULAR_ACCOUNT_QUERY_PARAM
 import xyz.p42.properties.SERVICE_TITLE
+import xyz.p42.properties.UNLOCK_ACCOUNT_QUERY_PARAM
 import xyz.p42.servicePort
 import kotlin.random.Random
+
 
 fun getWelcomeMessage() =
   """
@@ -32,15 +35,31 @@ fun getWelcomeMessage() =
         
            HTTP GET:
            http://localhost:$servicePort/acquire-account
-           Supported Query params: $IS_REGULAR_ACCOUNT_QUERY_PARAM=<boolean>, default: true
+           Supported Query params: 
+                                   $IS_REGULAR_ACCOUNT_QUERY_PARAM=<boolean>, default: true
                                    Useful if you need to get non-zkApp account.
-           Returns Account JSON: 
+                                   
+                                   $UNLOCK_ACCOUNT_QUERY_PARAM=<boolean>, default: false
+                                   Useful if you need to get unlocked account.
+           Returns JSON account key-pair:
            { pk:"", sk:"" }
            
            HTTP PUT:
            http://localhost:$servicePort/release-account
-           Accepts Account JSON as request payload: 
+           Accepts JSON account key-pair as request payload:
            { pk:"", sk:"" }
+           Returns JSON status message
+           
+           HTTP GET:
+           http://localhost:$servicePort/list-acquired-accounts
+           Returns JSON list of acquired accounts key-pairs:
+           [ { pk:"", sk:"" }, ... ]
+           
+           HTTP PUT:
+           http://localhost:$servicePort/unlock-account
+           Accepts JSON account key-pair as request payload:
+           { pk:"", sk:"" }
+           Returns JSON status message
            
         Operating with:
            Mina Genesis ledger:   $genesisLedgerPath
@@ -77,6 +96,17 @@ fun getAccountVkGraphQlQuery(publicKey: String) =
       account(publicKey: "$publicKey") {
         verificationKey {
           verificationKey
+        }
+      }
+    }
+    """.trimIndent()
+
+fun getUnlockAccountGraphQlQuery(publicKey: String) =
+  """
+    mutation {
+      unlockAccount(input: {publicKey: "$publicKey", password: "$accountCommonPassword"}) {
+        account {
+          publicKey
         }
       }
     }
