@@ -1,0 +1,37 @@
+---
+name: "release"
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    name: "Release for ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21.0.1'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.API_TOKEN }}
+          native-image-job-reports: 'true'
+      - name: Build native image
+        run: |
+          ./gradlew nativeCompile
+      - name: Rename artifact
+        run: mv ./build/native/nativeCompile/accounts-manager ./build/native/nativeCompile/accounts-manager-${{ matrix.os }}
+      - name: Create release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.API_TOKEN }}"
+          prerelease: false
+          files: |
+            ./build/native/nativeCompile/accounts-manager-${{ matrix.os }}

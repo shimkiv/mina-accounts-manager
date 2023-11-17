@@ -8,18 +8,38 @@ data class VerificationKey(
 )
 
 @Serializable
+data class AccountWrapper(
+  val publicKey: String
+)
+
+@Serializable
 data class VkWrapper(
   val verificationKey: VerificationKey?
 )
 
 @Serializable
-data class AccountWrapper(
+data class UnlockAccount(
+  val account: AccountWrapper
+)
+
+@Serializable
+data class VkAccountWrapper(
   val account: VkWrapper
 )
 
 @Serializable
+data class UnlockAccountWrapper(
+  val unlockAccount: UnlockAccount
+)
+
+@Serializable
 data class VkGraphQlResponse(
-  val data: AccountWrapper
+  val data: VkAccountWrapper
+)
+
+@Serializable
+data class UnlockAccountGraphQlResponse(
+  val data: UnlockAccountWrapper
 )
 
 @Serializable

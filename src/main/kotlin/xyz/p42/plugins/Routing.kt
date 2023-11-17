@@ -19,6 +19,7 @@ import kotlinx.html.code
 import kotlinx.html.head
 import kotlinx.html.style
 import kotlinx.html.title
+import kotlinx.serialization.encodeToString
 import xyz.p42.accounts
 import xyz.p42.accountsToBeReleased
 import xyz.p42.graphQlEndpoint
@@ -29,16 +30,22 @@ import xyz.p42.properties.ACCOUNTS_TO_KEEP_UNUSED
 import xyz.p42.properties.HTML_CODE_BLOCK_STYLE
 import xyz.p42.properties.IS_REGULAR_ACCOUNT_QUERY_PARAM
 import xyz.p42.properties.SERVICE_TITLE
+import xyz.p42.properties.UNLOCK_ACCOUNT_QUERY_PARAM
 import xyz.p42.utils.LoggingUtils
 import xyz.p42.utils.getAccountVerificationKey
 import xyz.p42.utils.getErrorHtml
 import xyz.p42.utils.getWelcomeMessage
 import xyz.p42.utils.isEndpointAvailable
 import xyz.p42.utils.releaseAccountAndGetNextIndex
+import xyz.p42.utils.unlockAccount
 import kotlin.random.Random
+
+val logger = LoggingUtils.logger
 
 private val acquireAccountMutex = Mutex()
 private val releaseAccountMutex = Mutex()
+private val listAcquiredAccountsMutex = Mutex()
+private val unlockAccountMutex = Mutex()
 
 fun Application.configureRouting() {
   install(StatusPages) {
@@ -76,25 +83,26 @@ fun Application.configureRouting() {
     get("/acquire-account") {
       acquireAccountMutex.withLock {
         val isRegularAccount = call.request.queryParameters[IS_REGULAR_ACCOUNT_QUERY_PARAM]?.toBoolean() ?: true
+        val unlockAccount = call.request.queryParameters[UNLOCK_ACCOUNT_QUERY_PARAM]?.toBoolean() ?: false
 
         try {
           var index = Random.nextInt(0, accounts.size - ACCOUNTS_TO_KEEP_UNUSED)
           if (isRegularAccount && isEndpointAvailable(graphQlEndpoint)) {
-            LoggingUtils.logger.info("An attempt to acquire non-zkApp account...")
+            logger.info("An attempt to acquire non-zkApp account...")
 
             val verificationKey: String? = getAccountVerificationKey(accounts[index])
             while (verificationKey != null && accounts[index].used) {
-              LoggingUtils.logger
+              logger
                 .info(
                   "Account with index #${index} is already in use or this is the zkApp account when it is not expected!"
                 )
               index = releaseAccountAndGetNextIndex()
             }
           } else {
-            LoggingUtils.logger.info("An attempt to acquire any account...")
+            logger.info("An attempt to acquire any account...")
 
             while (accounts[index].used) {
-              LoggingUtils.logger
+              logger
                 .info(
                   "Account with index #${index} is already in use!"
                 )
@@ -102,13 +110,16 @@ fun Application.configureRouting() {
             }
           }
           accounts[index].used = true
-          LoggingUtils.logger
+          logger
             .info(
-              "Acquired account with Index #${index} and Public Key: ${accounts[index].pk}"
+              "Acquired account with Index #${index} and public key ${accounts[index].pk}"
             )
+          if (unlockAccount) {
+            logger.info("Unlocking account with index #${index}...")
+            unlockAccount(accounts[index])
+          }
           call.respondText(
             text = json.encodeToString(
-              serializer = Account.serializer(),
               value = accounts[index]
             ),
             contentType = ContentType.Application.Json,
@@ -117,7 +128,6 @@ fun Application.configureRouting() {
         } catch (e: Throwable) {
           call.respondText(
             text = json.encodeToString(
-              serializer = Message.serializer(),
               value = Message(
                 code = HttpStatusCode.InternalServerError.value,
                 message = e.message!!
@@ -136,11 +146,10 @@ fun Application.configureRouting() {
           val message = "Account with public key ${account.pk} is set to be released."
 
           accountsToBeReleased.add(account)
-          LoggingUtils.logger.info(message)
+          logger.info(message)
 
           call.respondText(
             text = json.encodeToString(
-              serializer = Message.serializer(),
               value = Message(
                 code = HttpStatusCode.OK.value,
                 message = message
@@ -152,7 +161,50 @@ fun Application.configureRouting() {
         } catch (e: Throwable) {
           call.respondText(
             text = json.encodeToString(
-              serializer = Message.serializer(),
+              value = Message(
+                code = HttpStatusCode.InternalServerError.value,
+                message = e.message!!
+              )
+            ),
+            contentType = ContentType.Application.Json,
+            status = HttpStatusCode.InternalServerError
+          )
+        }
+      }
+    }
+    get("/list-acquired-accounts") {
+      listAcquiredAccountsMutex.withLock {
+        logger.info("Listing acquired accounts...")
+        call.respondText(
+          text = json.encodeToString(
+            value = accounts.filter { it.used }
+          ),
+          contentType = ContentType.Application.Json,
+          status = HttpStatusCode.OK
+        )
+      }
+    }
+    put("/unlock-account") {
+      unlockAccountMutex.withLock {
+        try {
+          val account = json.decodeFromString<Account>(call.receiveText())
+          val unlockedAccount = unlockAccount(account)
+          val message = "Account with public key $unlockedAccount is unlocked."
+
+          logger.info(message)
+          call.respondText(
+            text = json.encodeToString(
+              value = Message(
+                code = HttpStatusCode.OK.value,
+                message = message
+              )
+            ),
+            contentType = ContentType.Application.Json,
+            status = HttpStatusCode.OK
+          )
+        } catch (e: Throwable) {
+          call.respondText(
+            text = json.encodeToString(
               value = Message(
                 code = HttpStatusCode.InternalServerError.value,
                 message = e.message!!
