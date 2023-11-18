@@ -6,6 +6,7 @@ import xyz.p42.graphQlEndpoint
 import xyz.p42.json
 import xyz.p42.model.Account
 import xyz.p42.model.GraphQlPayload
+import xyz.p42.model.LockAccountGraphQlResponse
 import xyz.p42.model.UnlockAccountGraphQlResponse
 import xyz.p42.model.VkGraphQlResponse
 import xyz.p42.properties.ENDPOINT_AVAILABILITY_CHECK_TIMEOUT
@@ -37,6 +38,12 @@ fun getAccountVerificationKey(account: Account): String? =
       return null
     }
     return json.decodeFromString<VkGraphQlResponse>(it).data.account.verificationKey?.verificationKey
+  }
+
+fun lockAccount(account: Account): String =
+  sendGraphQlQuery(getLockAccountGraphQlQuery(account.pk)).let {
+    checkNotNull(it) { "Account '${account.pk}' cannot be locked!" }
+    return json.decodeFromString<LockAccountGraphQlResponse>(it).data.lockAccount.account.publicKey
   }
 
 fun unlockAccount(account: Account): String =
