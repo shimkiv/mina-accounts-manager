@@ -56,6 +56,12 @@ fun getWelcomeMessage() =
            [ { pk:"", sk:"" }, ... ]
            
            HTTP PUT:
+           http://localhost:$servicePort/lock-account
+           Accepts JSON account key-pair as request payload:
+           { pk:"", sk:"" }
+           Returns JSON status message
+           
+           HTTP PUT:
            http://localhost:$servicePort/unlock-account
            Accepts JSON account key-pair as request payload:
            { pk:"", sk:"" }
@@ -96,6 +102,17 @@ fun getAccountVkGraphQlQuery(publicKey: String) =
       account(publicKey: "$publicKey") {
         verificationKey {
           verificationKey
+        }
+      }
+    }
+    """.trimIndent()
+
+fun getLockAccountGraphQlQuery(publicKey: String) =
+  """
+    mutation {
+      lockAccount(input: {publicKey: "$publicKey"}) {
+        account {
+          publicKey
         }
       }
     }

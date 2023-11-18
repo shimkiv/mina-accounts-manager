@@ -36,6 +36,7 @@ import xyz.p42.utils.getAccountVerificationKey
 import xyz.p42.utils.getErrorHtml
 import xyz.p42.utils.getWelcomeMessage
 import xyz.p42.utils.isEndpointAvailable
+import xyz.p42.utils.lockAccount
 import xyz.p42.utils.releaseAccountAndGetNextIndex
 import xyz.p42.utils.unlockAccount
 import kotlin.random.Random
@@ -45,6 +46,7 @@ val logger = LoggingUtils.logger
 private val acquireAccountMutex = Mutex()
 private val releaseAccountMutex = Mutex()
 private val listAcquiredAccountsMutex = Mutex()
+private val lockAccountMutex = Mutex()
 private val unlockAccountMutex = Mutex()
 
 fun Application.configureRouting() {
@@ -182,6 +184,38 @@ fun Application.configureRouting() {
           contentType = ContentType.Application.Json,
           status = HttpStatusCode.OK
         )
+      }
+    }
+    put("/lock-account") {
+      lockAccountMutex.withLock {
+        try {
+          val account = json.decodeFromString<Account>(call.receiveText())
+          val lockedAccount = lockAccount(account)
+          val message = "Account with public key $lockedAccount is locked."
+
+          logger.info(message)
+          call.respondText(
+            text = json.encodeToString(
+              value = Message(
+                code = HttpStatusCode.OK.value,
+                message = message
+              )
+            ),
+            contentType = ContentType.Application.Json,
+            status = HttpStatusCode.OK
+          )
+        } catch (e: Throwable) {
+          call.respondText(
+            text = json.encodeToString(
+              value = Message(
+                code = HttpStatusCode.InternalServerError.value,
+                message = e.message!!
+              )
+            ),
+            contentType = ContentType.Application.Json,
+            status = HttpStatusCode.InternalServerError
+          )
+        }
       }
     }
     put("/unlock-account") {

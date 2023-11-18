@@ -18,7 +18,7 @@ data class VkWrapper(
 )
 
 @Serializable
-data class UnlockAccount(
+data class MinaAccount(
   val account: AccountWrapper
 )
 
@@ -28,13 +28,23 @@ data class VkAccountWrapper(
 )
 
 @Serializable
+data class LockAccountWrapper(
+  val lockAccount: MinaAccount
+)
+
+@Serializable
 data class UnlockAccountWrapper(
-  val unlockAccount: UnlockAccount
+  val unlockAccount: MinaAccount
 )
 
 @Serializable
 data class VkGraphQlResponse(
   val data: VkAccountWrapper
+)
+
+@Serializable
+data class LockAccountGraphQlResponse(
+  val data: LockAccountWrapper
 )
 
 @Serializable
