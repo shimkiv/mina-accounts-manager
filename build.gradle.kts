@@ -3,10 +3,11 @@ val kotlinVersion: String by project
 val kotlinxSerializationVersion: String by project
 
 plugins {
-  kotlin("jvm") version "1.9.20"
-  id("io.ktor.plugin") version "2.3.6"
-  id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20"
+  kotlin("jvm") version "1.9.22"
+  id("io.ktor.plugin") version "2.3.7"
+  id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
   id("org.graalvm.buildtools.native") version "0.9.28"
+  id("com.github.ben-manes.versions") version "0.50.0"
 }
 
 group = "xyz.p42"
@@ -44,6 +45,7 @@ graalvmNative {
 
       buildArgs.add("--enable-url-protocols=http")
       buildArgs.add("--initialize-at-build-time=io.ktor,kotlin,kotlinx,org.slf4j.LoggerFactory")
+      buildArgs.add("-H:+UnlockExperimentalVMOptions")
       buildArgs.add("-H:+InstallExitHandlers")
       buildArgs.add("-H:+ReportUnsupportedElementsAtRuntime")
       buildArgs.add("-H:+ReportExceptionStackTraces")

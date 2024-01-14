@@ -76,6 +76,12 @@ Available endpoints:
    [ { pk:"", sk:"" }, ... ]
 
    HTTP PUT:
+   http://localhost:8383/lock-account
+   Accepts JSON account key-pair as request payload:
+   { pk:"", sk:"" }
+   Returns JSON status message
+
+   HTTP PUT:
    http://localhost:8181/unlock-account
    Accepts JSON account key-pair as request payload:
    { pk:"", sk:"" }
